@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+    <!--! Vue 3 & axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.27.2/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue@3"></script>
+    
+    <!--! Tailwind css -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!--! Time table js -->
+    <script src="./plugins/timetable.js-master/dist/scripts/timetable.js"></script>
+    <link rel="stylesheet" href="./plugins/timetable.js-master/dist/styles/timetablejs.css">
+
+
+</head>
+
+<body style="margin: 0; padding:0">
+
+    <div id="app">
+        <div 
+            class="
+                w-full h-screen bg-[url('./background.png')] bg-no-repeat bg-cover
+            "
+        >
+            <div class="w-full h-full flex justify-center items-center">
+                <div class="w-[800px] -mt-[80px]">
+                
+                    <div class="text-2xl uppercase flex flex-row justify-between">
+                        <p>STUDENT : Smith utittawai</p>
+                        <p>6306021631061</p>
+                    </div>
+                
+                    <div class="mt-6 timetable"></div>
+                
+                    <div class="w-full flex justify-center mt-6">
+                        <button
+                            class="
+                                bg-[#F8832F] py-4 px-12 rounded-lg text-xl text-white 
+                            "
+                        >
+                            Check-in History
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
+
+
+<script>
+    
+    Vue.createApp({
+        data() {
+            return {
+                course: [] 
+            }
+        },
+        methods: {
+
+            async checkUserLogin() {
+                await axios.get('http://localhost:3000/checkUserLogin')
+                    .then(async (res) => {
+                        if (res.status === 200) {
+                            if (res.data.val === null) {
+                                alert(res.data.msg);
+                                window.location.href = 'http://localhost:3000/login.html';
+                            }
+                        }
+                    })
+                    .catch((err) => { console.log(err); });
+            },
+            
+            async getCourse(){
+                await axios.get('http://localhost:3000/displayCourseStd')
+                .then((res) => {
+                    this.course = res.data.val
+                })
+                .catch((err) => { console.log(err); });
+            },
+
+            setTableView() {
+                
+                var listDay = ['Monday', 'Tuesday', 'Wendesday', 'Thursday', 'Friday'];
+
+                var timetable = new Timetable();
+                timetable.setScope(8, 21); // optional, only whole hours between 0 and 23
+                timetable.useTwelveHour(); //optional, displays hours in 12 hour format (1:00PM)
+                timetable.addLocations(listDay);
+
+                let tmpTime = [null, null];
+                for (let item of this.course) {
+                    var options = {
+                        onClick: function(event, timetable, clickEvent) {
+                            console.log(item);
+                        }
+                    };
+                    
+                    let now = new Date();
+                    tmpTime[0] = {
+                        year: now.getFullYear(),
+                        month: now.getMonth(),
+                        day: now.getDate(),
+                        hour: item.time.start.split(':')[0],
+                        minute: item.time.start.split(':')[1]
+                    };
+
+                    tmpTime[1] = {
+                        year: now.getFullYear(),
+                        month: now.getMonth(),
+                        day: now.getDate(),
+                        hour: item.time.end.split(':')[0],
+                        minute: item.time.end.split(':')[1]
+                    };
+
+                    tmpTime[0] = new Date(tmpTime[0].year, tmpTime[0].month, tmpTime[0].day, tmpTime[0].hour, tmpTime[0].minute);
+                    tmpTime[1] = new Date(tmpTime[1].year, tmpTime[1].month, tmpTime[1].day, tmpTime[1].hour, tmpTime[1].minute);
+
+                    timetable.addEvent(item.subject_name, item.day, tmpTime[0], tmpTime[1], options);
+                }
+
+                var renderer = new Timetable.Renderer(timetable);
+                renderer.draw('.timetable'); // any css selector
+            }
+        },
+        async mounted() {
+            await this.checkUserLogin();
+            await this.getCourse();
+            this.setTableView();
+        },
+    }).mount('#app')
+</script>
+
