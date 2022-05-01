@@ -13,12 +13,14 @@
                 {
                     "code": "xD142b",
                     "date": "new Date()",
-                    "students": []
+                    "students": [],
+                    "status": 1
                 },
                 {
                     "code": "xD142b",
                     "date": "new Date()",
-                    "students": ["630602162412", "63060216232"]
+                    "students": ["630602162412", "63060216232"],
+                    "status": 1
                 }
             ]
         },

@@ -3,9 +3,47 @@ const stdModel = require('./../models/student');
 const tecModel = require('./../models/teacher');
 const courseModel = require('../models/course');
 
+
+router.use('/std', require('./student'));
+router.use('/tec', require('./teacher'));
+
+
 router.get('/sayhi', (req, res) => {
     res.json({ msg: 'Hello am router' });
 });
+
+
+router.get('/getCheckIn/:course_id/:sec', async (req, res) => {
+
+    try {
+
+        let now = new Date();
+        let findCourse = await courseModel.findOne({ course_id: req.params.course_id });
+        let findSection = findCourse.course_section.find(val => val.sec == parseInt(req.params.sec));
+
+        let statusFound = false;
+
+        for (let checkIn of findSection.checkTime) {
+            let dateTime = new Date(checkIn.date);
+            console.log('day', dateTime.getDate(), 'now', now.getDate());
+            console.log('month', dateTime.getMonth(), 'now', now.getMonth());
+            console.log('year', dateTime.getFullYear(), 'now', now.getFullYear());
+            if (dateTime.getDate() === now.getDate() && dateTime.getMonth() === now.getMonth() && dateTime.getFullYear() === now.getFullYear()) {
+                statusFound = checkIn;
+                console.log('checkIn', checkIn);
+                break;
+            }
+        }
+        if (statusFound) {
+            res.status(200).json({ val: statusFound, msg: 'success' });
+        } else {
+            res.status(200).json({ val: null, msg: 'not found' });
+        }
+
+
+    } catch (err) { res.json({ msg: err.message }); }
+
+})
 
 
 //! Course routes
@@ -29,121 +67,6 @@ router.post('/insertCourse', (req, res) => {
 });
 
 
-router.get('/displayCourseStd', async (req, res) => {
-
-    try {
-        // "std_couse": [
-        //     {
-        //         "id": "id_subject",
-        //         "sec": 1
-        //     },
-        //     {
-        //         "id": "id_subject",
-        //         "sec": 1
-        //     }
-        // ]
-
-        console.log('req.session.dataUser.std_course', req.session.dataUser.std_course);
-        let courseStudent = req.session.dataUser.std_course;
-        
-        let tmpCourse = null;
-        let findCourse = [];
-        for (let courseStd of courseStudent) {
-        
-            tmpCourse = await courseModel.find({ course_id: courseStd.id });
-            console.log('tmpCourse', tmpCourse);
-            console.log('tmpCourse.course_section', tmpCourse.course_section);
-
-            for (let course of tmpCourse) {
-                for (let section of course.course_section) {
-                    if (section.sec === courseStd.sec) {
-                        section.subject_ObjectID = course._id;
-                        section.subject_id = course.course_id;
-                        section.subject_name = course.course_name;
-                        console.log('section ', section)
-                        findCourse.push(section);
-                    }
-                }
-            }
-
-        }
-
-        res.status(200).json({ val: findCourse, msg: 'data student course displayed' });
-
-    } catch (err) { res.status(500).json({ msg: err.message }); }
-
-});
-
-
-router.get('/displayCourseTec', (req, res) => {
-    
-    try {
-
-    } catch (err) { res.status(500).json({ msg: err.message }); }
-
-})
-
-
-
-//! Student & Teacher routes
-router.post('/insertStd', (req, res) => {
-   
-    try {
-        
-        let data = req.body;
-
-        if (data.std_name === '' || data.std_id === '' || data.std_pwd === '' || data.std_course === null) {
-            throw new Error('Please fill all field');
-        }
-        let user = null;
-
-        if (typeof data === Array) {
-            for (let val of data) {
-                user = new stdModel(val);
-                user.save();
-            }
-        } else {
-            user = new stdModel(data);
-            user.save();
-        }
-
-        res.status(200).json({ val: user, msg: 'inserted' });
-
-    } catch (err) { res.status(500).json({ msg: err.message }) }
-
-});
-
-
-
-router.post('/insertTec', (req, res) => {
-   
-    try {
-        
-        let data = req.body;
-
-        if (data.tec_name === '' || data.tec_id === '' || data.tec_pwd === '' || data.tec_course === null) {
-            throw new Error('Please fill all field');
-        }
-
-        let teacher = null;
-        if (typeof data === Array) {
-            for (let val of data) {
-                teacher = new teacher(val);
-                teacher.save();
-            }
-        } else {
-            teacher = new teacher(data);
-            teacher.save();
-        }
-
-        res.status(200).json({ val: user, msg: 'inserted' });
-
-    } catch (err) { res.status(500).json({ msg: err.message }) }
-
-});
-
-
-
 router.post('/login', async (req, res) => {
     try {
 
@@ -160,7 +83,7 @@ router.post('/login', async (req, res) => {
                 
             if (student) {
                 req.session.dataUser = student;
-                res.status(200).json({ val: student, msg: 'Login Success' });
+                res.status(200).json({ status: 'std', val: student, msg: 'Login Success' });
             } else {
                 throw new Error('Id or Password invaild');
             }
@@ -177,7 +100,7 @@ router.post('/login', async (req, res) => {
            
             if (teacher) {
                 req.session.dataUser = teacher;
-                res.status(200).json({ val: teacher, msg: 'Login Success' });
+                res.status(200).json({ status: 'tec', val: teacher, msg: 'Login Success' });
             } else {
                 throw new Error('Id or Password invaild');
             }
@@ -203,7 +126,7 @@ router.get('/checkUserLogin', (req, res) => {
         }
 
     } catch (err) { res.status(500).json({ msg: err.message }) }
-})
+});
 
 
 

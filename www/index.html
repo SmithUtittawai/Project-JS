@@ -32,8 +32,8 @@
                 <div class="w-[800px] -mt-[80px]">
                 
                     <div class="text-2xl uppercase flex flex-row justify-between">
-                        <p>STUDENT : Smith utittawai</p>
-                        <p>6306021631061</p>
+                        <p>STUDENT : {{ dataUser.name }}</p>
+                        <p>{{ dataUser.id }}</p>
                     </div>
                 
                     <div class="mt-6 timetable"></div>
@@ -63,7 +63,8 @@
     Vue.createApp({
         data() {
             return {
-                course: [] 
+                course: [],
+                dataUser: { name: '', id: '' }
             }
         },
         methods: {
@@ -71,18 +72,22 @@
             async checkUserLogin() {
                 await axios.get('http://localhost:3000/checkUserLogin')
                     .then(async (res) => {
-                        if (res.status === 200) {
-                            if (res.data.val === null) {
-                                alert(res.data.msg);
-                                window.location.href = 'http://localhost:3000/login.html';
-                            }
+                        if (res.data.val === null) {
+                            alert(res.data.msg);
+                            window.location.href = 'http://localhost:3000/login.html';
+                        } else {
+                            this.dataUser = {
+                                id: res.data.val.std_id,
+                                name: res.data.val.std_name,
+                            };
+                            this.getCourse();
                         }
                     })
                     .catch((err) => { console.log(err); });
             },
             
             async getCourse(){
-                await axios.get('http://localhost:3000/displayCourseStd')
+                await axios.get('http://localhost:3000/std/displayCourseStd')
                 .then((res) => {
                     this.course = res.data.val
                 })
@@ -101,6 +106,7 @@
                 let tmpTime = [null, null];
                 for (let item of this.course) {
                     var options = {
+                        class: '',
                         onClick: function(event, timetable, clickEvent) {
                             console.log(item);
                         }
