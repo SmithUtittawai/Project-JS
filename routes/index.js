@@ -13,6 +13,29 @@ router.get('/sayhi', (req, res) => {
 });
 
 
+
+router.get('/checkStudentLogin/:course_id/:sec/:std_id', async (req, res) => {
+    
+    try {
+
+        let course_id = req.params.course_id;
+        let sec = req.params.sec;
+        let std_id = req.params.std_id;
+
+        let findCourse = await courseModel.findOne({ course_id: course_id, 'course_section.checkTime.students': std_id });
+        
+        if (findCourse) {
+            res.status(200).json({statusCheckIn: true, val: findCourse, msg: 'Checked-in'});
+        } else {
+            res.status(200).json({statusCheckIn: false, val: findCourse, msg: 'Absent'});
+        }
+
+    } catch (err) { res.status(500).json({ msg: err.message }) }
+
+});
+
+
+
 router.get('/getCheckIn/:course_id/:sec', async (req, res) => {
 
     try {

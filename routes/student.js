@@ -34,6 +34,53 @@ router.post('/insertStd', (req, res) => {
 
 
 
+router.post('/CheckIn/:course_id/:sec/:code', async (req, res) => {
+
+    try {
+
+        let idStd = req.session.dataUser._id;
+        let course_id = req.params.course_id;
+        let sec = parseInt(req.params.sec);
+        let stdCodeCheckIn = req.params.code;
+
+        let findCourse = await courseModel.findOne({ course_id: course_id });
+        let findSec = findCourse.course_section.find(val => val.sec == sec);
+        let tmpSec = findCourse.course_section.find(val => val.sec != sec);
+        let tmpArr = [];
+
+        if (findSec) {
+                
+            let statusCheck = false;
+            for (let checkTime of findSec.checkTime) {
+                if (checkTime.code === stdCodeCheckIn) {
+                    checkTime.students.push(idStd);
+                    statusCheck = true;
+                    break;
+                }
+            }
+
+            if (statusCheck) { 
+                tmpArr.push(findSec);
+                tmpArr.push(tmpSec);
+                findCourse.course_section = tmpArr;
+                await courseModel.findOneAndUpdate({ course_id: course_id }, { course_section: tmpArr });
+                res.status(200).json({ val: findCourse, msg: 'Check-In Success' });
+            } else {
+                throw new Error('Teacher maybe not create check-in!');
+            }
+
+        } else {
+            throw new Error('Code check-in invalid!');
+        }
+
+
+    } catch (err) { res.status(500).json({ msg: err.message }) }
+
+});
+
+
+
+
 router.get('/displayCourseStd', async (req, res) => {
 
     try {
